@@ -72,7 +72,15 @@ func handlerequest(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html")
 	switch r.Method {
 	case http.MethodGet:
-		handleIndex(w, r)
+
+		if r.URL.Path == "/" {
+			handleIndex(w, r)
+			return
+		}
+
+		// 404 handler
+		handle404(w, r)
+
 	case http.MethodPost:
 		handlePostComment(w, r)
 	}
@@ -80,17 +88,15 @@ func handlerequest(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleIndex(w http.ResponseWriter, r *http.Request) {
-	if r.URL.Path[1:] == "" {
-		posts := getPosts()
-		t := template.New("index.html")
-		t, err := t.ParseFiles("index.html")
-		if err != nil {
-			log.Fatal(err)
-		}
-		if err := t.Execute(w, posts); err != nil {
-			log.Fatal(err)
-		}
-		return
+
+	posts := getPosts()
+	t := template.New("index.html")
+	t, err := t.ParseFiles("index.html")
+	if err != nil {
+		log.Fatal(err)
+	}
+	if err := t.Execute(w, posts); err != nil {
+		log.Fatal(err)
 	}
 }
 
@@ -147,7 +153,12 @@ func handlePosts(w http.ResponseWriter, r *http.Request) {
 	}
 
 	f := "posts/" + uniquepost + ".md"
-	fileread, _ := ioutil.ReadFile(f)
+	fileread, err := ioutil.ReadFile(f)
+	if err != nil {
+		handle404(w, r)
+		return
+	}
+
 	lines := strings.Split(string(fileread), "\n")
 	status := string(lines[0])
 	title := string(lines[1])
@@ -161,6 +172,9 @@ func handlePosts(w http.ResponseWriter, r *http.Request) {
 	t, _ = t.ParseFiles("post.html")
 	t.Execute(w, post)
 
+}
+func handle404(w http.ResponseWriter, r *http.Request) {
+	http.ServeFile(w, r, "404.html")
 }
 
 func getPosts() []Post {
