@@ -1,3 +1,4 @@
+Unfinished
 Hello Go lang!
 12th Jan 2015
 This is a basic start to my own hosted go lang  markdown static blog/ web generator.
