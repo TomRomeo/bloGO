@@ -1,7 +1,9 @@
 package main
 
 import (
+	"bytes"
 	"database/sql"
+	"fmt"
 	"gopkg.in/yaml.v3"
 	"html/template"
 	"io/ioutil"
@@ -15,10 +17,10 @@ import (
 )
 
 type Post struct {
-	Status   string
-	Title    string
-	Date     string
-	Summary  string
+	Status   string `yaml:"status"`
+	Title    string `yaml:"title"`
+	Date     string `yaml:"date"`
+	Summary  string `yaml:"summary"`
 	Body     template.HTML
 	File     string
 	Comments []Comment
@@ -35,6 +37,14 @@ var (
 
 type Conf struct {
 	AllowComments bool `yaml:"allow_comments"`
+}
+
+type FrontMatterMissingError struct {
+	fileName string
+}
+
+func (e *FrontMatterMissingError) Error() string {
+	return fmt.Sprintf("Missing YML Frontmatter: %s", e.fileName)
 }
 
 func parseConfig() {
@@ -123,14 +133,14 @@ func handlePostComment(w http.ResponseWriter, r *http.Request) {
 }
 
 func handlePosts(w http.ResponseWriter, r *http.Request) {
-	uniquepost := strings.Replace(r.URL.Path, "/posts/", "", -1)
+	postName := strings.Replace(r.URL.Path, "/posts/", "", -1)
 
 	// declare an array to keep all comments
 	var comments []Comment
 
 	if conf.AllowComments {
 
-		rows, err := db.Query("select id, name, comment from comments where uniquepost = ?", uniquepost)
+		rows, err := db.Query("select id, name, comment from comments where postName = ?", postName)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -152,22 +162,25 @@ func handlePosts(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	f := "posts/" + uniquepost + ".md"
-	fileread, err := ioutil.ReadFile(f)
+	postMarkdownPath := "posts/" + postName + ".md"
+
+	// check if file exist -> else return 404
+	_, err := ioutil.ReadFile(postMarkdownPath)
 	if err != nil {
 		handle404(w, r)
 		return
 	}
 
-	lines := strings.Split(string(fileread), "\n")
-	status := string(lines[0])
-	title := string(lines[1])
-	date := string(lines[2])
-	summary := string(lines[3])
-	body := strings.Join(lines[4:len(lines)], "\n")
-	htmlBody := template.HTML(blackfriday.MarkdownCommon([]byte(body)))
+	post, err := getPost(postMarkdownPath, comments)
+	if err != nil {
+		if _, ok := err.(*FrontMatterMissingError); ok {
+			handle404(w, r)
+			log.Println(fmt.Sprintf("%s seems to be missing yml attributes, the request has been dropped", postMarkdownPath))
+		} else {
+			log.Fatal(err)
+		}
+	}
 
-	post := Post{status, title, date, summary, htmlBody, uniquepost, comments}
 	t := template.New("post.html")
 	t, _ = t.ParseFiles("post.html")
 	t.Execute(w, post)
@@ -178,26 +191,50 @@ func handle404(w http.ResponseWriter, r *http.Request) {
 }
 
 func getPosts() []Post {
-	a := []Post{}
+	posts := []Post{}
 	files, _ := filepath.Glob("posts/*")
-	for _, f := range files {
-		file := strings.Replace(f, "posts/", "", -1)
-		file = strings.Replace(file, ".md", "", -1)
 
-		// replace backticks for windows use
-		file = strings.Replace(file, "posts\\", "", -1)
-		fileread, _ := ioutil.ReadFile(f)
-		lines := strings.Split(string(fileread), "\n")
-		status := string(lines[0])
-		title := string(lines[1])
-		date := string(lines[2])
-		summary := string(lines[3])
-		body := strings.Join(lines[4:len(lines)], "\n")
-		htmlBody := template.HTML(blackfriday.MarkdownCommon([]byte(body)))
-
-		a = append(a, Post{status, title, date, summary, htmlBody, file, nil})
+	for _, filePath := range files {
+		post, err := getPost(filePath, nil)
+		if err != nil {
+			if _, ok := err.(*FrontMatterMissingError); ok {
+				return posts
+			} else {
+				log.Fatal(err)
+			}
+		}
+		posts = append(posts, *post)
 	}
-	return a
+	return posts
+}
+
+// function that returns a go struct post for a path
+func getPost(path string, comments []Comment) (*Post, error) {
+
+	fileName := strings.Replace(path, "posts/", "", -1)
+	fileName = strings.Replace(fileName, ".md", "", -1)
+	// also replace backticks for servers on Windows
+	fileName = strings.Replace(fileName, "posts\\", "", -1)
+
+	var post Post
+
+	readFile, _ := ioutil.ReadFile(path)
+	// first, parse the frontmatter with yaml
+	split := bytes.SplitN(readFile, []byte("---"), 2)
+
+	// throw error if frontmatter was not found
+	if len(split) < 2 {
+		return nil, &FrontMatterMissingError{fileName: fileName}
+	}
+	if err := yaml.Unmarshal(split[0], &post); err != nil {
+		return nil, err
+	}
+
+	post.Body = template.HTML(blackfriday.MarkdownCommon(split[1]))
+	post.File = fileName
+	post.Comments = comments
+
+	return &post, nil
 }
 
 func main() {
