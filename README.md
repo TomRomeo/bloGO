@@ -1,4 +1,4 @@
-# Go markdown blog
+# BloGO!
 > This is a fork and a WIP!
 ---
 
