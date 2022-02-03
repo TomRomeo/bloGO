@@ -19,32 +19,30 @@
         </header>
 
         <main>
-            <section>
+            <section id="welcomeSection">
+                <h1>Welcome to this Blog!</h1>
+                <p>Lorem ipsum dolor sit amet consectetur adipisicing elit. Adipisci assumenda ipsa, mollitia quia
+                    tenetur possimus fugiat quasi error distinctio neque quo delectus quod voluptates at reprehenderit
+                    quisquam doloremque consequatur autem non? Facilis, harum cum eum expedita voluptas rerum dolores.
+                    Laudantium.</p>
+            </section>
+            <section id="blogList">
+                <h1>Recent Blog posts</h1>
                 {{range .}}
                 <a href="/posts/{{.File}}">
-                    <h2 class="h2_home">{{.Title}} ({{.Date}})</h2>
+                    <div class="blogPost">
+                        <h2 class="h2_home">{{.Title}} ({{.Date}})</h2>
+                        <p>{{.Summary}}</p>
+                    </div>
                 </a>
-                <p>{{.Summary}}</p>
                 {{end}}
             </section>
         </main>
-
-        <aside>
-            <h3>Elsewhere</h3>
-            <ul>
-                <li><a href="https://github.com/TomRomeo" rel="me">github</a></li>
-                <li><a href="https://www.linkedin.com/in/tom-doil-663185227/" rel="me">LinkedIn</a></li>
-            </ul>
-        </aside>
-
-        <footer>
-            <h3>Colophon</h3>
-            <ul>
-                <li>Built with go (+some packages) <a href="https://github.com/TomRomeo/gomarkdownblog">Source</a>
-                </li>
-            </ul>
-        </footer>
     </div>
+    <footer>
+        <a href="https://github.com/TomRomeo/gomarkdownblog">Built with ♥ by Tom Doil</a>
+    </footer>
+
 
 </body>
 
