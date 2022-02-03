@@ -27,6 +27,7 @@
 			<div class="blogPostBody">
 				{{.Body}}
 			</div>
+			{{if .EnableComments}}
 			<section>
 				<form action="/{{.File}}" method="POST">
 					<h2>Feedback</h2>
@@ -51,6 +52,7 @@
 				<p>No Comments for this post.</p>
 				{{end}}
 			</section>
+			{{end}}
 		</div>
 		<footer>
 			<a href="https://github.com/TomRomeo/gomarkdownblog">Built with ♥ by Tom Doil</a>

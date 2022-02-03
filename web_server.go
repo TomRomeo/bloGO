@@ -17,13 +17,14 @@ import (
 )
 
 type Post struct {
-	Status   string `yaml:"status"`
-	Title    string `yaml:"title"`
-	Date     string `yaml:"date"`
-	Summary  string `yaml:"summary"`
-	Body     template.HTML
-	File     string
-	Comments []Comment
+	Status         string `yaml:"status"`
+	Title          string `yaml:"title"`
+	Date           string `yaml:"date"`
+	Summary        string `yaml:"summary"`
+	Body           template.HTML
+	File           string
+	Comments       []Comment
+	EnableComments bool `yaml:"enableComments"`
 }
 
 type Comment struct {
@@ -218,6 +219,9 @@ func getPost(path string, comments []Comment) (*Post, error) {
 
 	var post Post
 
+	// default should be true, not false
+	post.EnableComments = true
+
 	readFile, _ := ioutil.ReadFile(path)
 	// first, parse the frontmatter with yaml
 	split := bytes.SplitN(readFile, []byte("---"), 2)
@@ -229,6 +233,8 @@ func getPost(path string, comments []Comment) (*Post, error) {
 	if err := yaml.Unmarshal(split[0], &post); err != nil {
 		return nil, err
 	}
+
+	post.EnableComments = post.EnableComments && conf.AllowComments
 
 	post.Body = template.HTML(blackfriday.MarkdownCommon(split[1]))
 	post.File = fileName
