@@ -13,46 +13,49 @@
 </head>
 
 <body>
-	<div id="content">
-		<a class="readmode" href="javascript:void(0);">reduce white</a>
-		<header>
-			<h1><a href="/">BloGO</a></h1>
-		</header>
-		<main>
-			<article>
-
-				<h2 class="titleofarticle">{{.Title}}</h2>
+	<div id="background">
+		<div id="content">
+			<header>
+				<h1><a href="/">BloGO</a></h1>
+			</header>
+			<div class="blogPostHeader">
+				<p>Reading time:<span class="eta"></span></p>
 				<h3 class="dateofarticle">{{.Date}}</h3>
-				<!-- <a href="/{{.File}}"><h2>{{.Title}}</h2></a> -->
-				<p>Estimated reading time:<span class="eta"></span></p>
-				<p>{{.Body}}</p>
-			</article>
-		</main>
+				<h1 class="titleofarticle">{{.Title}}</h1>
+			</div>
+			<hr />
+			<div class="blogPostBody">
+				{{.Body}}
+			</div>
+			<section>
+				<form action="/{{.File}}" method="POST">
+					<h2>Feedback</h2>
+					<input type="hidden" name="uniquepost" value="{{.File}}">
+					<ol>
+						<li><label>Name:
+								<input type="text" name="name" required></label>
+						</li>
+						<li>
+							<label>Feedback:
+								<textarea type="textarea" name="comment" required></textarea></label>
+						</li>
+					</ol>
+					<input type="submit" value="Send Feedback">
+				</form>
+			</section>
+			<section class="comments">
+				{{range .Comments}}
+				<h5>{{.Name}}</h5>
+				<p>{{.Comment}}</p>
+				{{ else }}
+				<p>No Comments for this post.</p>
+				{{end}}
+			</section>
+		</div>
+		<footer>
+			<a href="https://github.com/TomRomeo/gomarkdownblog">Built with ♥ by Tom Doil</a>
+		</footer>
 
-		<section>
-			<form action="/{{.File}}" method="POST">
-				<h2>Feedback</h2>
-				<input type="hidden" name="uniquepost" value="{{.File}}">
-				<ol>
-					<li><label>Name:
-							<input type="text" name="name" required></label>
-					</li>
-					<li>
-						<label>Feedback:
-							<textarea type="textarea" name="comment" required></textarea></label>
-					</li>
-				</ol>
-				<input type="submit" value="Send Feedback">
-			</form>
-		</section>
-		<section class="comments">
-			{{range .Comments}}
-			<h5>{{.Name}}</h5>
-			<p>{{.Comment}}</p>
-			{{ else }}
-			<p>No Comments for this post.</p>
-			{{end}}
-		</section>
 	</div>
 
 </body>

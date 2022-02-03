@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@500&family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&display=swap');
 @media (prefers-color-scheme: dark) {
     body {
         --font-color: white;
@@ -30,12 +30,16 @@ body {
     color: var(--font-color);
     font-family: 'Roboto', sans-serif;;
 
-    --max-width: 60rem;
+    --max-width: 80ch;
+    font-size: max(1.2vw, 1rem);
 }
 #content {
-    max-width: var(--max-width);
-    background-color: var(--background-color);
     min-height: 100vh;
+
+    display: flex;
+    flex-direction: column;
+
+    padding: 0 5rem;
 }
 #floatingCenter {
     align-self: center;
@@ -52,9 +56,6 @@ header {
 header a{
     color: var(--font-color);
     text-decoration: none;
-}
-#content section {
-    padding: 1rem;
 }
 #welcomeSection {
 
@@ -82,18 +83,60 @@ header a{
     flex-direction: column;
     gap: 1rem;
 }
-footer {
+#background {
+    background-color: var(--background-color);
+    filter: drop-shadow(2px 4px 6px black);
     max-width: var(--max-width);
-    background-color: black;
+}
+footer {
     width: 100%;
+    background-color: black;
     min-height: 5rem;
 
     display: flex;
+    flex-direction: column;
     justify-content: center;
     align-items: center;
+
+    justify-self: flex-end;
 }
 footer a {
     color: white;
     text-decoration: none;
     opacity: .5;
+}
+.blogPostHeader {
+    display: flex;
+    align-items: flex-end;
+    gap: 1rem;
+
+    flex-grow: 1;
+    flex-wrap: wrap;
+}
+.blogPostHeader p {
+    opacity: .5;
+    margin-bottom: 0;
+}
+.blogPostHeader h3 {
+    opacity: .5;
+    margin-bottom: 0;
+
+    margin-left: auto;
+}
+.blogPostHeader h1 {
+    margin-bottom: 0;
+    width: 100%;
+}
+.blogPostBody {
+}
+.blogPostBody p{
+    opacity: .5;
+}
+.blogPostBody * {
+    max-width: 60ch;
+}
+hr {
+    border-color: var(--background-accent);
+    fill: var(--background-accent);
+    width: 100%;
 }
