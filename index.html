@@ -13,35 +13,40 @@
 </head>
 
 <body>
-    <div id="content">
-        <header>
-            <h1><a href="#">BloGO</a></h1>
-        </header>
+    <div id="background">
+        <div id="content">
+            <header>
+                <h1><a href="#">BloGO</a></h1>
+            </header>
 
-        <main>
-            <section id="welcomeSection">
-                <h1>Welcome to this Blog!</h1>
-                <p>Lorem ipsum dolor sit amet consectetur adipisicing elit. Adipisci assumenda ipsa, mollitia quia
-                    tenetur possimus fugiat quasi error distinctio neque quo delectus quod voluptates at reprehenderit
-                    quisquam doloremque consequatur autem non? Facilis, harum cum eum expedita voluptas rerum dolores.
-                    Laudantium.</p>
-            </section>
-            <section id="blogList">
-                <h1>Recent Blog posts</h1>
-                {{range .}}
-                <a href="/posts/{{.File}}">
-                    <div class="blogPost">
-                        <h2 class="h2_home">{{.Title}} ({{.Date}})</h2>
-                        <p>{{.Summary}}</p>
-                    </div>
-                </a>
-                {{end}}
-            </section>
-        </main>
+            <main>
+                <section id="welcomeSection">
+                    <h1>Welcome to this Blog!</h1>
+                    <p>Lorem ipsum dolor sit amet consectetur adipisicing elit. Adipisci assumenda ipsa, mollitia quia
+                        tenetur possimus fugiat quasi error distinctio neque quo delectus quod voluptates at
+                        reprehenderit
+                        quisquam doloremque consequatur autem non? Facilis, harum cum eum expedita voluptas rerum
+                        dolores.
+                        Laudantium.</p>
+                </section>
+                <section id="blogList">
+                    <h1>Recent Blog posts</h1>
+                    {{range .}}
+                    <a href="/posts/{{.File}}">
+                        <div class="blogPost">
+                            <h2 class="h2_home">{{.Title}} ({{.Date}})</h2>
+                            <p>{{.Summary}}</p>
+                        </div>
+                    </a>
+                    {{end}}
+                </section>
+            </main>
+        </div>
+        <footer>
+            <a href="https://github.com/TomRomeo/gomarkdownblog">Built with ♥ by Tom Doil</a>
+        </footer>
     </div>
-    <footer>
-        <a href="https://github.com/TomRomeo/gomarkdownblog">Built with ♥ by Tom Doil</a>
-    </footer>
+
 
 
 </body>
