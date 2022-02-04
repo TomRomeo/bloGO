@@ -117,6 +117,7 @@ footer {
     align-items: center;
 
     justify-self: flex-end;
+    margin-top: 25vw;
 }
 footer a {
     color: white;
