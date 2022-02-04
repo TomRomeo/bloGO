@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"database/sql"
 	"fmt"
 	readingtime "github.com/begmaroman/reading-time"
@@ -10,8 +11,11 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
+	"os/signal"
 	"path/filepath"
 	"strings"
+	"syscall"
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/russross/blackfriday"
@@ -255,9 +259,25 @@ func main() {
 	http.Handle("/css/", http.StripPrefix("/css", http.FileServer(http.Dir("./content/css"))))
 	http.Handle("/js/", http.StripPrefix("/js", http.FileServer(http.Dir("./content/js"))))
 
-	log.Println("Blog Server deployed on :8000")
-	if err := http.ListenAndServe(":8000", nil); err != nil {
-		log.Fatal(err)
-	}
+	srv := &http.Server{Addr: ":8000", Handler: nil}
 
+	// graceful shutdown
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, syscall.SIGINT, syscall.SIGTERM)
+
+	go func(srv *http.Server) {
+		log.Println("Blog Server deployed on :8000")
+		if err := srv.ListenAndServe(); err != nil {
+			c <- syscall.SIGINT
+		}
+
+	}(srv)
+
+	<-c
+
+	log.Println("Shutting down webserver")
+	err := srv.Shutdown(context.Background())
+	if err != nil {
+		log.Fatalf("Server could not shut down: %s", err)
+	}
 }
