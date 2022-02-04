@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"database/sql"
 	"fmt"
+	readingtime "github.com/begmaroman/reading-time"
 	"gopkg.in/yaml.v3"
 	"html/template"
 	"io/ioutil"
@@ -25,6 +26,7 @@ type Post struct {
 	File           string
 	Comments       []Comment
 	EnableComments bool `yaml:"enableComments"`
+	Ert            string
 }
 
 type Comment struct {
@@ -235,6 +237,10 @@ func getPost(path string, comments []Comment) (*Post, error) {
 	}
 
 	post.EnableComments = post.EnableComments && conf.AllowComments
+
+	// estimate reading time
+	estimation := readingtime.Estimate(string(split[1]))
+	post.Ert = estimation.Text
 
 	post.Body = template.HTML(blackfriday.MarkdownCommon(split[1]))
 	post.File = fileName
