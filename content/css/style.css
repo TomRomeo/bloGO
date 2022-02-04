@@ -2,7 +2,8 @@
 @media (prefers-color-scheme: dark) {
     body {
         --font-color: white;
-        --background-color: #131313;
+        --background-color: #181818;
+        --content-background-color: #131313;
         --background-accent: #181818;
         --dot-color: rgba(255, 255, 255, 0.5);
     }
@@ -10,7 +11,8 @@
 @media (prefers-color-scheme: light) {
     body {
         --font-color: black;
-        --background-color: white;
+        --background-color: #f0f0f0;
+        --content-background-color: white;
         --background-accent: aliceblue;
         --dot-color: rgba(0, 0, 0, 0.5);
     }
@@ -43,7 +45,7 @@ body {
 }
 #floatingCenter {
     align-self: center;
-    background-color: var(--background-color);
+    background-color: var(--content-background-color);
     padding: 5rem;
 }
 #floatingCenter p{
@@ -84,8 +86,7 @@ header a{
     gap: 1rem;
 }
 #background {
-    background-color: var(--background-color);
-    filter: drop-shadow(2px 4px 6px black);
+    background-color: var(--content-background-color);
     max-width: var(--max-width);
 }
 footer {
