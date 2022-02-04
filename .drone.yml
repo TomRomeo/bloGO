@@ -1,0 +1,33 @@
+---
+kind: pipeline
+type: exec
+os: linux
+arch: amd64
+
+name: CD
+
+steps:
+- name: remove old deployed version
+  failure: ignore
+  commands:
+    - docker stop bloGO
+    - docker rm bloGO
+    - docker rmi blogo
+- name: prepare working directory
+  commands:
+    - git -C $WORKINGDIR pull pull main
+  environment:
+    WORKINGDIR:
+      from_secret: workingDir
+- name: deploy new docker image
+  commands:
+    - docker build -t blogo $WORKINGDIR
+    - docker run -d --name bloGO -p 127.0.0.1:8000:8000 -v $WORKINGDIR/posts/:/build/posts/ blogo
+  environment:
+    WORKINGDIR:
+      from_secret: workingDir
+---
+kind: signature
+hmac: f8123e213aca3cde716bbc4ae9b9aa77246e7cb016eac566747ef8c4f62666b5
+
+...
