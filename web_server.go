@@ -199,9 +199,10 @@ func handle404(w http.ResponseWriter, r *http.Request) {
 
 func getPosts() []Post {
 	posts := []Post{}
-	files, _ := filepath.Glob("posts/*")
+	files, _ := filepath.Glob("posts/*.md")
 
 	for _, filePath := range files {
+
 		post, err := getPost(filePath, nil)
 		if err != nil {
 			if _, ok := err.(*FrontMatterMissingError); ok {
@@ -210,7 +211,11 @@ func getPosts() []Post {
 				log.Fatal(err)
 			}
 		}
-		posts = append(posts, *post)
+
+		// ignore wip files
+		if !strings.Contains(filePath, "wip") && !(strings.ToLower(post.Status) == "wip") {
+			posts = append(posts, *post)
+		}
 	}
 	return posts
 }
