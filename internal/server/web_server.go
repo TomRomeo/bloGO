@@ -1,4 +1,4 @@
-package main
+package server
 
 import (
 	"bytes"
@@ -38,8 +38,9 @@ type Comment struct {
 }
 
 var (
-	db   *sql.DB
-	conf Conf
+	db         *sql.DB
+	conf       Conf
+	rootFolder string
 )
 
 type Conf struct {
@@ -55,7 +56,7 @@ func (e *FrontMatterMissingError) Error() string {
 }
 
 func parseConfig() {
-	yConfig, err := ioutil.ReadFile("config.yml")
+	yConfig, err := ioutil.ReadFile(rootFolder + "config.yml")
 	if err != nil {
 		log.Fatalf("Could not open config.yml: %s", err)
 	}
@@ -169,7 +170,7 @@ func handlePosts(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	postMarkdownPath := "posts/" + postName + ".md"
+	postMarkdownPath := rootFolder + "posts/" + postName + ".md"
 
 	// check if file exist -> else return 404
 	_, err := ioutil.ReadFile(postMarkdownPath)
@@ -199,7 +200,7 @@ func handle404(w http.ResponseWriter, r *http.Request) {
 
 func getPosts() []Post {
 	posts := []Post{}
-	files, _ := filepath.Glob("posts/*.md")
+	files, _ := filepath.Glob(rootFolder + "posts/*.md")
 
 	for _, filePath := range files {
 
@@ -258,11 +259,13 @@ func getPost(path string, comments []Comment) (*Post, error) {
 	return &post, nil
 }
 
-func main() {
+func ServeBlogoServer(folderpath string) {
+	rootFolder = folderpath
+
 	http.HandleFunc("/", handlerequest)
 	http.HandleFunc("/posts/", handlePosts)
-	http.Handle("/css/", http.StripPrefix("/css", http.FileServer(http.Dir("./content/css"))))
-	http.Handle("/js/", http.StripPrefix("/js", http.FileServer(http.Dir("./content/js"))))
+	http.Handle("/css/", http.StripPrefix("/css", http.FileServer(http.Dir(fmt.Sprintf("%s/content/css", rootFolder)))))
+	http.Handle("/js/", http.StripPrefix("/js", http.FileServer(http.Dir(fmt.Sprintf("%s/content/js", rootFolder)))))
 
 	srv := &http.Server{Addr: ":8000", Handler: nil}
 
