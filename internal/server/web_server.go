@@ -1,11 +1,12 @@
 package server
 
 import (
-	"bytes"
 	"context"
 	"database/sql"
 	"fmt"
-	readingtime "github.com/begmaroman/reading-time"
+	"gomarkdownblog/internal/models"
+	"gomarkdownblog/internal/models/errors"
+	"gomarkdownblog/internal/parsing"
 	"gopkg.in/yaml.v3"
 	"html/template"
 	"io/ioutil"
@@ -13,47 +14,17 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"path/filepath"
 	"strings"
 	"syscall"
 
 	_ "github.com/go-sql-driver/mysql"
-	"github.com/russross/blackfriday"
 )
-
-type Post struct {
-	Status         string `yaml:"status"`
-	Title          string `yaml:"title"`
-	Date           string `yaml:"date"`
-	Summary        string `yaml:"summary"`
-	Body           template.HTML
-	File           string
-	Comments       []Comment
-	EnableComments bool `yaml:"enableComments"`
-	Ert            string
-}
-
-type Comment struct {
-	Name, Comment string
-}
 
 var (
 	db         *sql.DB
-	conf       Conf
+	conf       models.Conf
 	rootFolder string
 )
-
-type Conf struct {
-	AllowComments bool `yaml:"allow_comments"`
-}
-
-type FrontMatterMissingError struct {
-	fileName string
-}
-
-func (e *FrontMatterMissingError) Error() string {
-	return fmt.Sprintf("Missing YML Frontmatter: %s", e.fileName)
-}
 
 func parseConfig() {
 	yConfig, err := ioutil.ReadFile(rootFolder + "config.yml")
@@ -107,7 +78,7 @@ func handlerequest(w http.ResponseWriter, r *http.Request) {
 
 func handleIndex(w http.ResponseWriter, r *http.Request) {
 
-	posts := getPosts()
+	posts := parsing.GetPosts(rootFolder)
 	t := template.New("index.html")
 	t, err := t.ParseFiles("index.html")
 	if err != nil {
@@ -144,7 +115,7 @@ func handlePosts(w http.ResponseWriter, r *http.Request) {
 	postName := strings.Replace(r.URL.Path, "/posts/", "", -1)
 
 	// declare an array to keep all comments
-	var comments []Comment
+	var comments []models.Comment
 
 	if conf.AllowComments {
 
@@ -162,7 +133,7 @@ func handlePosts(w http.ResponseWriter, r *http.Request) {
 				log.Fatal(err)
 			}
 			//append the comment into the array when done
-			comments = append(comments, Comment{name, comment})
+			comments = append(comments, models.Comment{name, comment})
 		}
 		err = rows.Err()
 		if err != nil {
@@ -179,9 +150,9 @@ func handlePosts(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	post, err := getPost(postMarkdownPath, comments)
+	post, err := parsing.GetPost(postMarkdownPath, comments, conf.AllowComments)
 	if err != nil {
-		if _, ok := err.(*FrontMatterMissingError); ok {
+		if _, ok := err.(*errors.FrontMatterMissingError); ok {
 			handle404(w, r)
 			log.Println(fmt.Sprintf("%s seems to be missing yml attributes, the request has been dropped", postMarkdownPath))
 		} else {
@@ -196,67 +167,6 @@ func handlePosts(w http.ResponseWriter, r *http.Request) {
 }
 func handle404(w http.ResponseWriter, r *http.Request) {
 	http.ServeFile(w, r, "404.html")
-}
-
-func getPosts() []Post {
-	posts := []Post{}
-	files, _ := filepath.Glob(rootFolder + "posts/*.md")
-
-	for _, filePath := range files {
-
-		post, err := getPost(filePath, nil)
-		if err != nil {
-			if _, ok := err.(*FrontMatterMissingError); ok {
-				return posts
-			} else {
-				log.Fatal(err)
-			}
-		}
-
-		// ignore wip files
-		if !strings.Contains(filePath, "wip") && !(strings.ToLower(post.Status) == "wip") {
-			posts = append(posts, *post)
-		}
-	}
-	return posts
-}
-
-// function that returns a go struct post for a path
-func getPost(path string, comments []Comment) (*Post, error) {
-
-	fileName := strings.Replace(path, "posts/", "", -1)
-	fileName = strings.Replace(fileName, ".md", "", -1)
-	// also replace backticks for servers on Windows
-	fileName = strings.Replace(fileName, "posts\\", "", -1)
-
-	var post Post
-
-	// default should be true, not false
-	post.EnableComments = true
-
-	readFile, _ := ioutil.ReadFile(path)
-	// first, parse the frontmatter with yaml
-	split := bytes.SplitN(readFile, []byte("---"), 2)
-
-	// throw error if frontmatter was not found
-	if len(split) < 2 {
-		return nil, &FrontMatterMissingError{fileName: fileName}
-	}
-	if err := yaml.Unmarshal(split[0], &post); err != nil {
-		return nil, err
-	}
-
-	post.EnableComments = post.EnableComments && conf.AllowComments
-
-	// estimate reading time
-	estimation := readingtime.Estimate(string(split[1]))
-	post.Ert = estimation.Text
-
-	post.Body = template.HTML(blackfriday.MarkdownCommon(split[1]))
-	post.File = fileName
-	post.Comments = comments
-
-	return &post, nil
 }
 
 func ServeBlogoServer(folderpath string) {
