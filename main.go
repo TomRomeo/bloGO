@@ -1,14 +1,43 @@
 package main
 
 import (
+	"embed"
+	_ "embed"
 	"github.com/urfave/cli/v2"
 	"gomarkdownblog/internal/models/commands"
+	"gomarkdownblog/internal/server"
 	"log"
 	"os"
 	"time"
 )
 
+var (
+	//go:embed index.html
+	IndexTemplateHTML string
+
+	//go:embed 404.html
+	NotFoundTemplateHTML string
+
+	//go:embed post.html
+	PostTemplateHTML string
+
+	//go:embed content
+	ContentDir embed.FS
+)
+
 func main() {
+
+	// inject embedded files into subpackage
+	server.IndexTemplateHTML = IndexTemplateHTML
+	server.NotFoundTemplateHTML = NotFoundTemplateHTML
+	server.PostTemplateHTML = PostTemplateHTML
+	server.ContentDir = ContentDir
+
+	commands.IndexTemplateHTML = IndexTemplateHTML
+	commands.NotFoundTemplateHTML = NotFoundTemplateHTML
+	commands.PostTemplateHTML = PostTemplateHTML
+	commands.ContentDir = ContentDir
+
 	app := &cli.App{
 		Name:        "blogo",
 		HelpName:    "blogo",

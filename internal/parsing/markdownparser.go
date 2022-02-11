@@ -54,7 +54,7 @@ func GetPost(path string, comments []models.Comment, allowComments bool) (*model
 
 func GetPosts(rootFolder string) []models.Post {
 	posts := []models.Post{}
-	files, _ := filepath.Glob(rootFolder + "posts/*.md")
+	files, _ := filepath.Glob(rootFolder + "*.md")
 
 	for _, filePath := range files {
 
