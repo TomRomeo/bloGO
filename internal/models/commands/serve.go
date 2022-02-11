@@ -3,6 +3,7 @@ package commands
 import (
 	"github.com/urfave/cli/v2"
 	"gomarkdownblog/internal/server"
+	"gomarkdownblog/internal/util"
 )
 
 var ServeCommand = &cli.Command{
@@ -15,12 +16,9 @@ Great for development, not very great for performance.`,
 	Action: func(c *cli.Context) error {
 		dir := c.Args().Get(0)
 
-		// add trailing slash if missing
-		if dir == "" {
-			dir = "./"
-		} else if dir[len(dir)-1:] != "/" {
-			dir += "/"
-		}
+		dir = util.ReformatPath(dir)
+
+		server.InitServer()
 		server.ServeBlogoServer(dir)
 		return nil
 	},

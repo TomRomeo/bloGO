@@ -3,12 +3,15 @@ package server
 import (
 	"context"
 	"database/sql"
+	"embed"
+	_ "embed"
 	"fmt"
 	"gomarkdownblog/internal/models"
 	"gomarkdownblog/internal/models/errors"
 	"gomarkdownblog/internal/parsing"
 	"gopkg.in/yaml.v3"
 	"html/template"
+	"io/fs"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -24,6 +27,14 @@ var (
 	db         *sql.DB
 	conf       models.Conf
 	rootFolder string
+
+	IndexTemplateHTML string
+
+	NotFoundTemplateHTML string
+
+	PostTemplateHTML string
+
+	ContentDir embed.FS
 )
 
 func parseConfig() {
@@ -36,7 +47,7 @@ func parseConfig() {
 	}
 }
 
-func init() {
+func InitServer() {
 	parseConfig()
 
 	//only connect to sqlite if we want comment functionality
@@ -78,9 +89,9 @@ func handlerequest(w http.ResponseWriter, r *http.Request) {
 
 func handleIndex(w http.ResponseWriter, r *http.Request) {
 
-	posts := parsing.GetPosts(rootFolder)
+	posts := parsing.GetPosts(rootFolder + "/posts/")
 	t := template.New("index.html")
-	t, err := t.ParseFiles("index.html")
+	t, err := t.Parse(IndexTemplateHTML)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -161,12 +172,13 @@ func handlePosts(w http.ResponseWriter, r *http.Request) {
 	}
 
 	t := template.New("post.html")
-	t, _ = t.ParseFiles("post.html")
+	t, _ = t.Parse(PostTemplateHTML)
 	t.Execute(w, post)
 
 }
 func handle404(w http.ResponseWriter, r *http.Request) {
-	http.ServeFile(w, r, "404.html")
+	//http.ServeFile(w, r, "404.html")
+	w.Write([]byte(NotFoundTemplateHTML))
 }
 
 func ServeBlogoServer(folderpath string) {
@@ -174,8 +186,18 @@ func ServeBlogoServer(folderpath string) {
 
 	http.HandleFunc("/", handlerequest)
 	http.HandleFunc("/posts/", handlePosts)
-	http.Handle("/css/", http.StripPrefix("/css", http.FileServer(http.Dir(fmt.Sprintf("%s/content/css", rootFolder)))))
-	http.Handle("/js/", http.StripPrefix("/js", http.FileServer(http.Dir(fmt.Sprintf("%s/content/js", rootFolder)))))
+	fss := fs.FS(ContentDir)
+	cssDir, err := fs.Sub(fss, "content/css")
+	if err != nil {
+		log.Fatal(err)
+	}
+	jsDir, err := fs.Sub(fss, "content/js")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	http.Handle("/css/", http.StripPrefix("/css", http.FileServer(http.FS(cssDir))))
+	http.Handle("/js/", http.StripPrefix("/js", http.FileServer(http.FS(jsDir))))
 
 	srv := &http.Server{Addr: ":8000", Handler: nil}
 
@@ -194,7 +216,7 @@ func ServeBlogoServer(folderpath string) {
 	<-c
 
 	log.Println("Shutting down webserver")
-	err := srv.Shutdown(context.Background())
+	err = srv.Shutdown(context.Background())
 	if err != nil {
 		log.Fatalf("Server could not shut down: %s", err)
 	}
