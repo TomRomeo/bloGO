@@ -47,6 +47,7 @@ func main() {
 			commands.ServeCommand,
 			commands.ParseCommand,
 			commands.InitCommand,
+			commands.UpdateCommand,
 		},
 		CommandNotFound: nil,
 		OnUsageError:    nil,
