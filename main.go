@@ -46,6 +46,7 @@ func main() {
 		Commands: []*cli.Command{
 			commands.ServeCommand,
 			commands.ParseCommand,
+			commands.InitCommand,
 		},
 		CommandNotFound: nil,
 		OnUsageError:    nil,
