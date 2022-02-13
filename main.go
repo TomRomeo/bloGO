@@ -45,7 +45,7 @@ func main() {
 		Description: "Create a blog from markdown in seconds 🚀",
 		Commands: []*cli.Command{
 			commands.ServeCommand,
-			commands.RenderCommand,
+			commands.ParseCommand,
 		},
 		CommandNotFound: nil,
 		OnUsageError:    nil,
