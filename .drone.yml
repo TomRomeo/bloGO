@@ -13,16 +13,10 @@ steps:
     - docker stop bloGO
     - docker rm bloGO
     - docker rmi blogo
-- name: prepare working directory
-  commands:
-    - git -C $WORKINGDIR pull pull main
-  environment:
-    WORKINGDIR:
-      from_secret: workingDir
 - name: deploy new docker image
   commands:
-    - docker build -t blogo $WORKINGDIR
-    - docker run -d --name bloGO -p 127.0.0.1:8000:8000 -v $WORKINGDIR/posts/:/build/posts/ blogo
+    - docker build -t blogo .
+    - docker run -d --name bloGO -v $WORKINGDIR/:/bloGO/ blogo
   environment:
     WORKINGDIR:
       from_secret: workingDir

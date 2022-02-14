@@ -10,9 +10,12 @@ COPY ./posts/test.md ./
 
 RUN go get .
 
+RUN go build -o /blogo
 
-RUN go build -o /bloGO
+WORKDIR /bloGO
+RUN blogo init .
+
 ENTRYPOINT [ "/build/docker_entrypoint.sh" ]
 
 EXPOSE 8000
-VOLUME [ "/build/posts" ]
+VOLUME [ "/bloGO" ]

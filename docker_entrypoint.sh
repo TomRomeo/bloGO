@@ -1,3 +1,3 @@
 #!/bin/sh
-/bin/mv /build/test.md /build/posts/test.md 2> /dev/null
-/bloGO
+/bin/mv /build/posts/*.md /bloGO/posts/ 2> /dev/null
+/blogo u
