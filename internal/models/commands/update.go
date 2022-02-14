@@ -1,8 +1,8 @@
 package commands
 
 import (
+	"blogo/internal/parsing"
 	"github.com/urfave/cli/v2"
-	"gomarkdownblog/internal/parsing"
 	"html/template"
 	"log"
 	"os"

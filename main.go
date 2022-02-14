@@ -1,11 +1,11 @@
 package main
 
 import (
+	"blogo/internal/models/commands"
+	"blogo/internal/server"
 	"embed"
 	_ "embed"
 	"github.com/urfave/cli/v2"
-	"gomarkdownblog/internal/models/commands"
-	"gomarkdownblog/internal/server"
 	"log"
 	"os"
 	"time"

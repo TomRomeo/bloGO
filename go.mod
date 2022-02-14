@@ -1,4 +1,4 @@
-module gomarkdownblog
+module blogo
 
 go 1.17
 

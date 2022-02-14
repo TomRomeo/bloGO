@@ -1,9 +1,9 @@
 package commands
 
 import (
+	"blogo/internal/server"
+	"blogo/internal/util"
 	"github.com/urfave/cli/v2"
-	"gomarkdownblog/internal/server"
-	"gomarkdownblog/internal/util"
 )
 
 var ServeCommand = &cli.Command{

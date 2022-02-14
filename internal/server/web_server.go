@@ -1,14 +1,14 @@
 package server
 
 import (
+	"blogo/internal/models"
+	"blogo/internal/models/errors"
+	"blogo/internal/parsing"
 	"context"
 	"database/sql"
 	"embed"
 	_ "embed"
 	"fmt"
-	"gomarkdownblog/internal/models"
-	"gomarkdownblog/internal/models/errors"
-	"gomarkdownblog/internal/parsing"
 	"gopkg.in/yaml.v3"
 	"html/template"
 	"io/fs"

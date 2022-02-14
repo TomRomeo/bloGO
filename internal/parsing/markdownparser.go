@@ -1,11 +1,11 @@
 package parsing
 
 import (
+	"blogo/internal/models"
+	"blogo/internal/models/errors"
 	"bytes"
 	readingtime "github.com/begmaroman/reading-time"
 	"github.com/russross/blackfriday"
-	"gomarkdownblog/internal/models"
-	"gomarkdownblog/internal/models/errors"
 	"gopkg.in/yaml.v3"
 	"html/template"
 	"io/ioutil"

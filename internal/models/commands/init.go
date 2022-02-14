@@ -1,9 +1,9 @@
 package commands
 
 import (
+	"blogo/internal/models"
+	"blogo/internal/util"
 	"github.com/urfave/cli/v2"
-	"gomarkdownblog/internal/models"
-	"gomarkdownblog/internal/util"
 	"html/template"
 	"io/fs"
 	"log"
