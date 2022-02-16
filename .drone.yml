@@ -16,7 +16,7 @@ steps:
 - name: deploy new docker image
   commands:
     - docker build -t blogo .
-    - docker run -d --name bloGO -v $WORKINGDIR/:/bloGO/ blogo
+    - docker run -d --name bloGO -p 127.0.0.1:8000:8000 -v $WORKINGDIR/:/bloGO/ blogo
   environment:
     WORKINGDIR:
       from_secret: workingDir
