@@ -50,7 +50,7 @@ body {
     font-family: 'Roboto', sans-serif;;
 
     --max-width: 80ch;
-    font-size: max(1.2vw, 1rem);
+    font-size: max(1.2vw, .8rem);
 }
 #content {
     min-height: 100vh;
@@ -87,8 +87,16 @@ header a{
     border-radius: 5px;
     padding: 1rem 2rem;
 }
-.blogPost h2 {
+.blogPost h3 {
+    width: 100%;
     margin-top: .5rem;
+
+    display: inline-flex;
+    justify-content: space-between;
+}
+.blogPost h3 .h2_date {
+    opacity: .5;
+    font-size: .8em;
 }
 #blogList a {
     color: var(--font-color);

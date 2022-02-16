@@ -1,61 +1,44 @@
-package main
+package server
 
 import (
-	"bytes"
+	"blogo/internal/models"
+	"blogo/internal/models/errors"
+	"blogo/internal/parsing"
 	"context"
 	"database/sql"
+	"embed"
+	_ "embed"
 	"fmt"
-	readingtime "github.com/begmaroman/reading-time"
 	"gopkg.in/yaml.v3"
 	"html/template"
+	"io/fs"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
-	"path/filepath"
 	"strings"
 	"syscall"
 
 	_ "github.com/go-sql-driver/mysql"
-	"github.com/russross/blackfriday"
 )
-
-type Post struct {
-	Status         string `yaml:"status"`
-	Title          string `yaml:"title"`
-	Date           string `yaml:"date"`
-	Summary        string `yaml:"summary"`
-	Body           template.HTML
-	File           string
-	Comments       []Comment
-	EnableComments bool `yaml:"enableComments"`
-	Ert            string
-}
-
-type Comment struct {
-	Name, Comment string
-}
 
 var (
-	db   *sql.DB
-	conf Conf
+	db         *sql.DB
+	conf       models.Conf
+	rootFolder string
+
+	IndexTemplateHTML string
+
+	NotFoundTemplateHTML string
+
+	PostTemplateHTML string
+
+	ContentDir embed.FS
 )
 
-type Conf struct {
-	AllowComments bool `yaml:"allow_comments"`
-}
-
-type FrontMatterMissingError struct {
-	fileName string
-}
-
-func (e *FrontMatterMissingError) Error() string {
-	return fmt.Sprintf("Missing YML Frontmatter: %s", e.fileName)
-}
-
 func parseConfig() {
-	yConfig, err := ioutil.ReadFile("config.yml")
+	yConfig, err := ioutil.ReadFile(rootFolder + "config.yml")
 	if err != nil {
 		log.Fatalf("Could not open config.yml: %s", err)
 	}
@@ -64,7 +47,7 @@ func parseConfig() {
 	}
 }
 
-func init() {
+func InitServer() {
 	parseConfig()
 
 	//only connect to sqlite if we want comment functionality
@@ -105,16 +88,8 @@ func handlerequest(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleIndex(w http.ResponseWriter, r *http.Request) {
-
-	posts := getPosts()
-	t := template.New("index.html")
-	t, err := t.ParseFiles("index.html")
-	if err != nil {
-		log.Fatal(err)
-	}
-	if err := t.Execute(w, posts); err != nil {
-		log.Fatal(err)
-	}
+	posts := parsing.GetPosts(rootFolder + "posts/")
+	parsing.ParseIndex(w, posts)
 }
 
 func handlePostComment(w http.ResponseWriter, r *http.Request) {
@@ -143,7 +118,7 @@ func handlePosts(w http.ResponseWriter, r *http.Request) {
 	postName := strings.Replace(r.URL.Path, "/posts/", "", -1)
 
 	// declare an array to keep all comments
-	var comments []Comment
+	var comments []models.Comment
 
 	if conf.AllowComments {
 
@@ -161,7 +136,7 @@ func handlePosts(w http.ResponseWriter, r *http.Request) {
 				log.Fatal(err)
 			}
 			//append the comment into the array when done
-			comments = append(comments, Comment{name, comment})
+			comments = append(comments, models.Comment{name, comment})
 		}
 		err = rows.Err()
 		if err != nil {
@@ -169,7 +144,7 @@ func handlePosts(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	postMarkdownPath := "posts/" + postName + ".md"
+	postMarkdownPath := rootFolder + "posts/" + postName + ".md"
 
 	// check if file exist -> else return 404
 	_, err := ioutil.ReadFile(postMarkdownPath)
@@ -178,9 +153,9 @@ func handlePosts(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	post, err := getPost(postMarkdownPath, comments)
+	post, err := parsing.GetPost(postMarkdownPath, comments, conf.AllowComments)
 	if err != nil {
-		if _, ok := err.(*FrontMatterMissingError); ok {
+		if _, ok := err.(*errors.FrontMatterMissingError); ok {
 			handle404(w, r)
 			log.Println(fmt.Sprintf("%s seems to be missing yml attributes, the request has been dropped", postMarkdownPath))
 		} else {
@@ -189,80 +164,82 @@ func handlePosts(w http.ResponseWriter, r *http.Request) {
 	}
 
 	t := template.New("post.html")
-	t, _ = t.ParseFiles("post.html")
+	t, _ = t.Parse(PostTemplateHTML)
 	t.Execute(w, post)
 
 }
 func handle404(w http.ResponseWriter, r *http.Request) {
-	http.ServeFile(w, r, "404.html")
+	//http.ServeFile(w, r, "404.html")
+	w.Write([]byte(NotFoundTemplateHTML))
 }
 
-func getPosts() []Post {
-	posts := []Post{}
-	files, _ := filepath.Glob("posts/*.md")
+func ServeBlogoServer(folderpath string, live bool) {
+	rootFolder = folderpath
 
-	for _, filePath := range files {
+	if live {
+		http.HandleFunc("/", handlerequest)
+		http.HandleFunc("/posts/", handlePosts)
 
-		post, err := getPost(filePath, nil)
-		if err != nil {
-			if _, ok := err.(*FrontMatterMissingError); ok {
-				return posts
-			} else {
+	} else {
+
+		posts := parsing.GetPosts(rootFolder + "posts/")
+		for i := 0; i < len(posts); i++ {
+
+			log.Printf("post: %s..", posts[i].File)
+			f, err := os.OpenFile(rootFolder+"/postsHTML/"+posts[i].File+".html", os.O_WRONLY|os.O_CREATE, 0600)
+			if err != nil {
 				log.Fatal(err)
 			}
+			defer f.Close()
+
+			t := template.New("post.html")
+			t, _ = t.Parse(PostTemplateHTML)
+			t.Execute(f, posts[i])
+			f.Close()
 		}
 
-		// ignore wip files
-		if !strings.Contains(filePath, "wip") && !(strings.ToLower(post.Status) == "wip") {
-			posts = append(posts, *post)
+		// parse index
+		f, err := os.OpenFile(rootFolder+"index.html", os.O_WRONLY|os.O_CREATE, 0600)
+		if err != nil {
+			log.Fatal(err)
 		}
-	}
-	return posts
-}
+		defer f.Close()
+		parsing.ParseIndex(f, posts)
 
-// function that returns a go struct post for a path
-func getPost(path string, comments []Comment) (*Post, error) {
+		// parse 404
+		f, err = os.OpenFile(rootFolder+"404.html", os.O_WRONLY|os.O_CREATE, 0600)
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer f.Close()
+		parsing.Parse404(f)
 
-	fileName := strings.Replace(path, "posts/", "", -1)
-	fileName = strings.Replace(fileName, ".md", "", -1)
-	// also replace backticks for servers on Windows
-	fileName = strings.Replace(fileName, "posts\\", "", -1)
+		// serve
 
-	var post Post
-
-	// default should be true, not false
-	post.EnableComments = true
-
-	readFile, _ := ioutil.ReadFile(path)
-	// first, parse the frontmatter with yaml
-	split := bytes.SplitN(readFile, []byte("---"), 2)
-
-	// throw error if frontmatter was not found
-	if len(split) < 2 {
-		return nil, &FrontMatterMissingError{fileName: fileName}
-	}
-	if err := yaml.Unmarshal(split[0], &post); err != nil {
-		return nil, err
+		http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+			http.ServeFile(w, r, rootFolder+"index.html")
+		})
+		http.HandleFunc("*", func(w http.ResponseWriter, r *http.Request) {
+			http.ServeFile(w, r, rootFolder+"404.html")
+		})
+		http.HandleFunc("/posts/", func(w http.ResponseWriter, r *http.Request) {
+			p := strings.Replace(r.URL.Path, "/posts/", "postsHTML/", 1) + ".html"
+			http.ServeFile(w, r, p)
+		})
 	}
 
-	post.EnableComments = post.EnableComments && conf.AllowComments
+	fss := fs.FS(ContentDir)
+	cssDir, err := fs.Sub(fss, "content/css")
+	if err != nil {
+		log.Fatal(err)
+	}
+	jsDir, err := fs.Sub(fss, "content/js")
+	if err != nil {
+		log.Fatal(err)
+	}
 
-	// estimate reading time
-	estimation := readingtime.Estimate(string(split[1]))
-	post.Ert = estimation.Text
-
-	post.Body = template.HTML(blackfriday.MarkdownCommon(split[1]))
-	post.File = fileName
-	post.Comments = comments
-
-	return &post, nil
-}
-
-func main() {
-	http.HandleFunc("/", handlerequest)
-	http.HandleFunc("/posts/", handlePosts)
-	http.Handle("/css/", http.StripPrefix("/css", http.FileServer(http.Dir("./content/css"))))
-	http.Handle("/js/", http.StripPrefix("/js", http.FileServer(http.Dir("./content/js"))))
+	http.Handle("/css/", http.StripPrefix("/css", http.FileServer(http.FS(cssDir))))
+	http.Handle("/js/", http.StripPrefix("/js", http.FileServer(http.FS(jsDir))))
 
 	srv := &http.Server{Addr: ":8000", Handler: nil}
 
@@ -281,7 +258,7 @@ func main() {
 	<-c
 
 	log.Println("Shutting down webserver")
-	err := srv.Shutdown(context.Background())
+	err = srv.Shutdown(context.Background())
 	if err != nil {
 		log.Fatalf("Server could not shut down: %s", err)
 	}
