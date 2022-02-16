@@ -10,6 +10,10 @@ import (
 	"os"
 )
 
+var (
+	ConfigFile string
+)
+
 var InitCommand = &cli.Command{
 	Name:        "init",
 	Aliases:     []string{"i"},
@@ -70,6 +74,15 @@ var InitCommand = &cli.Command{
 		if err != nil {
 			return err
 		}
+
+		// config.yml
+		log.Println("Copying Config.yml...")
+		f, err = os.OpenFile(outDir+"config.yml", os.O_WRONLY|os.O_CREATE, 0600)
+		if err != nil {
+			return err
+		}
+		defer f.Close()
+		f.WriteString(ConfigFile)
 
 		log.Println("initialized sucessfully")
 		return nil

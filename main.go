@@ -24,6 +24,9 @@ var (
 
 	//go:embed content
 	ContentDir embed.FS
+
+	//go:embed config.yml
+	ConfigFile string
 )
 
 func main() {
@@ -38,6 +41,7 @@ func main() {
 	commands.NotFoundTemplateHTML = NotFoundTemplateHTML
 	commands.PostTemplateHTML = PostTemplateHTML
 	commands.ContentDir = ContentDir
+	commands.ConfigFile = ConfigFile
 
 	parsing.IndexTemplateHTML = IndexTemplateHTML
 	parsing.NotFoundTemplateHTML = NotFoundTemplateHTML
