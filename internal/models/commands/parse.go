@@ -86,47 +86,10 @@ var ParseCommand = &cli.Command{
 				return err
 			}
 			defer f.Close()
-			t := template.New("index.html")
-			t, err = t.Parse(IndexTemplateHTML)
-			if err != nil {
-				return err
-			}
-			if err := t.Execute(f, posts); err != nil {
-				return err
+			if err := parsing.ParseIndex(f, posts); err != nil {
+				log.Println("Could not parse Index.html:", err)
 			}
 		}
-
-		//
-		//log.Println("Creating 404.html...")
-		//fileGlobs, err = os.OpenFile(outDir+"404.html", os.O_WRONLY|os.O_CREATE, 0600)
-		//if err != nil {
-		//	return err
-		//}
-		//defer fileGlobs.Close()
-		//t = template.New("404.html")
-		//t, err = t.Parse(NotFoundTemplateHTML)
-		//if err != nil {
-		//	return err
-		//}
-		//if err := t.Execute(fileGlobs, posts); err != nil {
-		//	return err
-		//}
-		//log.Println("Copying static files...")
-		//err = fs.WalkDir(ContentDir, ".", func(path string, d fs.DirEntry, err error) error {
-		//	if d.IsDir() {
-		//		return nil
-		//	}
-		//	log.Printf("%s...", path)
-		//	fileGlobs, err := os.OpenFile(outDir+path, os.O_WRONLY|os.O_CREATE, 0600)
-		//	if err != nil {
-		//		return err
-		//	}
-		//	defer fileGlobs.Close()
-		//	return nil
-		//})
-		//if err != nil {
-		//	return err
-		//}
 
 		log.Println("rendered sucessfully")
 		return nil

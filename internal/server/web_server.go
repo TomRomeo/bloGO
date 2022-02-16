@@ -88,7 +88,8 @@ func handlerequest(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleIndex(w http.ResponseWriter, r *http.Request) {
-	parsing.ParseIndex(w, rootFolder)
+	posts := parsing.GetPosts(rootFolder + "posts/")
+	parsing.ParseIndex(w, posts)
 }
 
 func handlePostComment(w http.ResponseWriter, r *http.Request) {
@@ -203,7 +204,7 @@ func ServeBlogoServer(folderpath string, live bool) {
 			log.Fatal(err)
 		}
 		defer f.Close()
-		parsing.ParseIndex(f, rootFolder)
+		parsing.ParseIndex(f, posts)
 
 		// parse 404
 		f, err = os.OpenFile(rootFolder+"404.html", os.O_WRONLY|os.O_CREATE, 0600)
@@ -211,7 +212,7 @@ func ServeBlogoServer(folderpath string, live bool) {
 			log.Fatal(err)
 		}
 		defer f.Close()
-		parsing.Parse404(f, rootFolder)
+		parsing.Parse404(f)
 
 		// serve
 

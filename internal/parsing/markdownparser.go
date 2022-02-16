@@ -58,8 +58,8 @@ func GetPost(path string, comments []models.Comment, allowComments bool) (*model
 	return &post, nil
 }
 
-func GetPosts(rootFolder string) []models.Post {
-	posts := []models.Post{}
+func GetPosts(rootFolder string) []*models.Post {
+	posts := []*models.Post{}
 	files, _ := filepath.Glob(rootFolder + "*.md")
 
 	for _, filePath := range files {
@@ -75,32 +75,33 @@ func GetPosts(rootFolder string) []models.Post {
 
 		// ignore wip files
 		if !strings.Contains(filePath, "wip") && !(strings.ToLower(post.Status) == "wip") {
-			posts = append(posts, *post)
+			posts = append(posts, post)
 		}
 	}
 	return posts
 }
 
-func ParseIndex(w io.Writer, rootFolder string) {
+func ParseIndex(w io.Writer, posts []*models.Post) error {
 
-	posts := GetPosts(rootFolder + "/posts/")
 	t := template.New("index.html")
 	t, err := t.Parse(IndexTemplateHTML)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 	if err := t.Execute(w, posts); err != nil {
-		log.Fatal(err)
+		return err
 	}
+	return nil
 }
-func Parse404(w io.Writer, rootFolder string) {
+func Parse404(w io.Writer) error {
 	t := template.New("404.html")
 	t, err := t.Parse(NotFoundTemplateHTML)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 	var l interface{}
 	if err = t.Execute(w, l); err != nil {
-		log.Fatal(err)
+		return err
 	}
+	return nil
 }
