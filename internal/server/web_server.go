@@ -88,16 +88,7 @@ func handlerequest(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleIndex(w http.ResponseWriter, r *http.Request) {
-
-	posts := parsing.GetPosts(rootFolder + "/posts/")
-	t := template.New("index.html")
-	t, err := t.Parse(IndexTemplateHTML)
-	if err != nil {
-		log.Fatal(err)
-	}
-	if err := t.Execute(w, posts); err != nil {
-		log.Fatal(err)
-	}
+	parsing.ParseIndex(w, rootFolder)
 }
 
 func handlePostComment(w http.ResponseWriter, r *http.Request) {
@@ -181,11 +172,61 @@ func handle404(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(NotFoundTemplateHTML))
 }
 
-func ServeBlogoServer(folderpath string) {
+func ServeBlogoServer(folderpath string, live bool) {
 	rootFolder = folderpath
 
-	http.HandleFunc("/", handlerequest)
-	http.HandleFunc("/posts/", handlePosts)
+	if live {
+		http.HandleFunc("/", handlerequest)
+		http.HandleFunc("/posts/", handlePosts)
+
+	} else {
+
+		posts := parsing.GetPosts(rootFolder + "posts/")
+		for i := 0; i < len(posts); i++ {
+
+			log.Printf("post: %s..", posts[i].File)
+			f, err := os.OpenFile(rootFolder+"/postsHTML/"+posts[i].File+".html", os.O_WRONLY|os.O_CREATE, 0600)
+			if err != nil {
+				log.Fatal(err)
+			}
+			defer f.Close()
+
+			t := template.New("post.html")
+			t, _ = t.Parse(PostTemplateHTML)
+			t.Execute(f, posts[i])
+			f.Close()
+		}
+
+		// parse index
+		f, err := os.OpenFile(rootFolder+"index.html", os.O_WRONLY|os.O_CREATE, 0600)
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer f.Close()
+		parsing.ParseIndex(f, rootFolder)
+
+		// parse 404
+		f, err = os.OpenFile(rootFolder+"404.html", os.O_WRONLY|os.O_CREATE, 0600)
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer f.Close()
+		parsing.Parse404(f, rootFolder)
+
+		// serve
+
+		http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+			http.ServeFile(w, r, rootFolder+"index.html")
+		})
+		http.HandleFunc("*", func(w http.ResponseWriter, r *http.Request) {
+			http.ServeFile(w, r, rootFolder+"404.html")
+		})
+		http.HandleFunc("/posts/", func(w http.ResponseWriter, r *http.Request) {
+			p := strings.Replace(r.URL.Path, "/posts/", "postsHTML/", 1) + ".html"
+			http.ServeFile(w, r, p)
+		})
+	}
+
 	fss := fs.FS(ContentDir)
 	cssDir, err := fs.Sub(fss, "content/css")
 	if err != nil {

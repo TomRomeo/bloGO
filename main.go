@@ -2,6 +2,7 @@ package main
 
 import (
 	"blogo/internal/models/commands"
+	"blogo/internal/parsing"
 	"blogo/internal/server"
 	"embed"
 	_ "embed"
@@ -37,6 +38,9 @@ func main() {
 	commands.NotFoundTemplateHTML = NotFoundTemplateHTML
 	commands.PostTemplateHTML = PostTemplateHTML
 	commands.ContentDir = ContentDir
+
+	parsing.IndexTemplateHTML = IndexTemplateHTML
+	parsing.NotFoundTemplateHTML = NotFoundTemplateHTML
 
 	app := &cli.App{
 		Name:        "blogo",

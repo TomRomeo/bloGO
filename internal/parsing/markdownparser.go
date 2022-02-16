@@ -8,10 +8,16 @@ import (
 	"github.com/russross/blackfriday"
 	"gopkg.in/yaml.v3"
 	"html/template"
+	"io"
 	"io/ioutil"
 	"log"
 	"path/filepath"
 	"strings"
+)
+
+var (
+	IndexTemplateHTML    string
+	NotFoundTemplateHTML string
 )
 
 // function that returns a go struct post for a path
@@ -73,4 +79,28 @@ func GetPosts(rootFolder string) []models.Post {
 		}
 	}
 	return posts
+}
+
+func ParseIndex(w io.Writer, rootFolder string) {
+
+	posts := GetPosts(rootFolder + "/posts/")
+	t := template.New("index.html")
+	t, err := t.Parse(IndexTemplateHTML)
+	if err != nil {
+		log.Fatal(err)
+	}
+	if err := t.Execute(w, posts); err != nil {
+		log.Fatal(err)
+	}
+}
+func Parse404(w io.Writer, rootFolder string) {
+	t := template.New("404.html")
+	t, err := t.Parse(NotFoundTemplateHTML)
+	if err != nil {
+		log.Fatal(err)
+	}
+	var l interface{}
+	if err = t.Execute(w, l); err != nil {
+		log.Fatal(err)
+	}
 }
