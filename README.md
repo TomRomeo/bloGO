@@ -1,9 +1,13 @@
 # BloGO!
-> This is a fork and a WIP!
+
+A markdown to html converter written in GO that let's you create a blog with ease!
+
 ---
 
-The source code here allows for the creation of a markdown based blog built in Go. The program includes code to support comments.
+When writing a blog, most of the time you do not need a lot of fancy formatting. 90% of the blog posts have the same structure so writing the html everytime is cumbersome and makes updating the style very hard. This is what BloGO was written for!
 
-# A fork?
-This project is a fork of [gomarkdownblog](https://github.com/adamprocter/gomarkdownblog) by adamprocter.
-I am working on adding features at the moment to make their rather old repo more user friendly.
+Worry less and write your blog posts in Markdown, you can even include images! And if you do need something more complex you can still resort to html in your markdown files
+
+- The styling for all blog posts gets derived from a template file which makes changing the blog theme as easy as changing the template and regenerating the project.
+- You want to prototype without actually publishing your posts already? Setting the status of the file to wip or adding the .wip.md extension will hide it until you are ready.
+
